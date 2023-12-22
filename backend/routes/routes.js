@@ -11,58 +11,46 @@ deleteBookById
 updateBookById
 */
 
-router.post('/uploadFile',upload.single('file'), async (req,res) =>{
-    const file = req.file;
-    console.log(file);
-    return res.status(201).json({
-        "messgae":"file uploaded successfully"
-    })
-})
-router.post('/postBook',upload.single('file'), async(req,res) =>{
-    console.log(req.body);
-    console.log(req.file);
+router.post('/postBook', async (req, res, next) => {
+    try {
+        console.log(req.body);
+        if (!req.body) {
+            res.status(400);
+            throw new Error("Bad Request, Request body is empty or missing");
+        }
 
+        const { name, author, datePublished, publisher, language, category, year, rating } = req.body;
+        const isbn = uuid.v4();
 
-    if (!req.body) {
-        res.status(400).json({
-            "error": "Bad request",
-            "message": "Request body is empty or missing"
+        // insert data into the database
+        const newBook = await bookModel.create({
+            isbn,
+            name,
+            author,
+            datePublished,
+            publisher,
+            category,
+            language,
+            year,
+            rating,
         });
+
+        if (newBook) {
+            res.status(201).json({
+                "message": "new book has been successfully created",
+                "status": 201,
+            });
+        } else {
+            res.status(400);
+            throw new Error("Bad request");
+        }
+    } catch (error) {
+        // Pass the error to the next middleware (errorMiddleware)
+        next(error);
     }
-    
-    const bookProfile = req.file.path
-    const {name,author,datePublished,publisher,language,category,year,rating} = req.body;
-    const isbn = uuid.v4();
-    
+});
 
-    //insert data into the database
-    const newBook = await bookModel.create({
-        isbn,
-        name,
-        author,
-        datePublished,
-        publisher,
-        category,
-        language,
-        year,
-        rating,
-        bookProfile
-    })
-
-    if(newBook){
-        res.status(201).json({
-            "message":"new book have been successfully created",
-            "status":201,
-        })
-    }else{
-        res.status(400).json({
-            "message":"Bad request",
-            "status":400
-        })
-    }
-
-})
-router.get('/getBookById/:id', async (req, res) => {
+router.get('/getBookById/:id', async (req, res,next) => {
     const bookId = req.params.id;
     console.log(`Book id is: ${bookId}`);
     
@@ -75,22 +63,17 @@ router.get('/getBookById/:id', async (req, res) => {
                 "book": book
             });
         } else {
-            return res.status(404).json({
-                "message": "The book you are looking for does not exist",
-                "status": 404
-            });
+            res.status(404)
+            throw new Error("The book you are looking for does not exist")
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({
-            "message": "Internal server error",
-            "status": 500
-        });
+        next(error);
+       
     }
 });
 
 router.get('/getBooks', async (req,res) =>{
-
     try {
         const allBooks = await bookModel.find();
         if(allBooks.length === 0){
@@ -109,11 +92,8 @@ router.get('/getBooks', async (req,res) =>{
 
         
     } catch (error) {
-        return res.status(500).json({
-            "error":"internal server error",
-            "status":500
-        })
-        
+        res.status(500)
+        throw new Error("internal server error")
     }
 
 })
@@ -135,23 +115,19 @@ router.delete('/deleteBookById/:id', async (req,res) =>{
         })
         
     } catch (error) {
-        return res.status(500).json({
-            'status':500,
-            'Message':'Internal server error'
-        })
+        res.status(500)
+        throw new Error("Internal server error")
         
     }
 
 })
 
 router.put('/updateBookById/:id', async (req,res) =>{
-    if(!req.params || !req.body){
-        res.status(501).json({
-            "error":"Bad Request",
-            "Message":"Request body is empty or request param is empty"
-        })
+    if(!req.params.id){
+        res.status(400)
+        throw new Error("Id parameter must be set")
     }
-    const bookId = req.params['id'];
+    const bookId = req.params.id;
     const updatedBookInfo = req.body;
     console.log(`Book id: ${bookId}`);
 

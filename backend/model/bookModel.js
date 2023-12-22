@@ -33,10 +33,6 @@ const bookModel = new mongoose.Schema({
         type: Number,
         required: true
     },
-    bookProfile: {
-        type: String,
-        required: true,
-    },
     isbn: {
         type: String,
         required: true,

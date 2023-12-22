@@ -1,13 +1,13 @@
 import React from "react";
+import {Link} from "react-router-dom";
 
 const BookCard = ({ book }) => {
-  const { name, author, category, datePublished,bookProfile,rating,language,year } = book;
-
+  const { name, author, category, datePublished,bookProfile,rating,language,year,_id } = book;
   return (
     <div className="book-card">
       <img src={bookProfile} alt={name} />
       <div className="book-details">
-        <h3>{name}</h3>
+        <Link to ={_id}>{name}</Link>
         <p>Author: {author}</p>
         <p>Category: {category}</p>
         <p>Date Published: {datePublished}</p>
